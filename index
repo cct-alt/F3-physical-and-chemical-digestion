@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>物理消化與化學消化的對比</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+            overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
+        }
+
+        .panel-container {
+            position: relative;
+            width: 100%;
+            height: 450px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden; /* Ensure nothing goes out of bounds */
+        }
+
+        .cookie-piece {
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+        }
+
+        /* Subtly indicate clickability without causing layout jitter */
+        .cookie-piece.small-piece:hover {
+            filter: drop-shadow(0 6px 8px rgba(0,0,0,0.25)) brightness(1.05);
+        }
+
+        #big-cookie {
+            z-index: 10;
+        }
+
+        #big-cookie:hover {
+            transform: scale(1.02);
+        }
+
+        /* Tooltip styling - absolutely stable */
+        #mech-tooltip {
+            position: absolute;
+            pointer-events: none; /* Let clicks pass through if needed */
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            z-index: 50;
+            background: white;
+            border: 2px solid #94a3b8;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: translate(-50%, -10px);
+            /* Prevent text selection */
+            user-select: none;
+        }
+
+        #mech-tooltip.visible {
+            opacity: 1;
+            transform: translate(-50%, -20px);
+        }
+
+        #mech-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: #94a3b8 transparent transparent transparent;
+        }
+
+        #chem-svg {
+            width: 100%;
+            height: 100%;
+            touch-action: none; /* Crucial for custom drag logic on touch devices */
+        }
+
+        .chem-node, .chem-bond {
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        #enzyme-group {
+            cursor: grab;
+            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
+        }
+        
+        #enzyme-group:active, #enzyme-group.dragging {
+            cursor: grabbing;
+            filter: drop-shadow(0 8px 12px rgba(0,0,0,0.3));
+        }
+
+        /* Background patterns */
+        .bg-grid-amber { background-image: radial-gradient(#fde68a 1.5px, transparent 1.5px); background-size: 24px 24px; }
+        .bg-grid-sky { background-image: radial-gradient(#bae6fd 1.5px, transparent 1.5px); background-size: 24px 24px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-2 md:p-6 text-slate-800">
+
+    <header class="mb-6 text-center relative shrink-0">
+        <h1 class="text-3xl font-extrabold text-slate-800 mb-2">消化作用的對比</h1>
+        <p class="text-slate-600 font-medium">觀察大塊食物與分子結構在兩種消化過程中的變化</p>
+        <button id="btn-reset" class="mt-4 md:mt-0 md:absolute md:right-4 md:top-2 text-slate-700 font-bold py-2 px-6 rounded-full bg-white border-2 border-slate-300 hover:bg-slate-100 hover:border-slate-400 active:bg-slate-200 transition-all shadow-sm z-50">
+            重新開始
+        </button>
+    </header>
+
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto w-full">
+        
+        <div class="bg-white rounded-[2rem] shadow-xl border-t-8 border-amber-400 flex flex-col relative overflow-hidden bg-grid-amber">
+            <h2 class="text-2xl font-bold text-amber-900 text-center py-4 bg-white/90 backdrop-blur-md border-b border-amber-100 shadow-sm z-20">
+                物理消化 (機械消化)
+            </h2>
+            <div class="absolute top-20 w-full text-center z-20 pointer-events-none">
+                <span id="mech-instruction" class="inline-block bg-amber-100 text-amber-800 px-6 py-2 rounded-full text-[15px] font-bold shadow-md transition-all duration-300">
+                    請點擊下方的大餅乾 (模擬牙齒咀嚼)
+                </span>
+            </div>
+
+            <div id="mech-container" class="panel-container">
+                <!-- Tooltip showing molecular structure remains unchanged -->
+                <div id="mech-tooltip">
+                    <span class="text-sm font-bold text-slate-600 mb-2">內部化學結構未改變</span>
+                    <!-- Mini Starch SVG inside tooltip -->
+                    <svg width="150" height="24" viewBox="0 0 150 24">
+                        <g transform="translate(15, 12) scale(0.6)">
+                            <line x1="0" y1="0" x2="40" y2="0" stroke="#334155" stroke-width="5"/>
+                            <line x1="40" y1="0" x2="80" y2="0" stroke="#334155" stroke-width="5"/>
+                            <line x1="80" y1="0" x2="120" y2="0" stroke="#334155" stroke-width="5"/>
+                            <line x1="120" y1="0" x2="160" y2="0" stroke="#334155" stroke-width="5"/>
+                            <polygon points="-15,0 -7.5,-13 7.5,-13 15,0 7.5,13 -7.5,13" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+                            <polygon points="25,0 32.5,-13 47.5,-13 55,0 47.5,13 32.5,13" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+                            <polygon points="65,0 72.5,-13 87.5,-13 95,0 87.5,13 72.5,13" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+                            <polygon points="105,0 112.5,-13 127.5,-13 135,0 127.5,13 112.5,13" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+                            <polygon points="145,0 152.5,-13 167.5,-13 175,0 167.5,13 152.5,13" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
+                        </g>
+                    </svg>
+                    <span class="text-sm font-bold text-sky-800 bg-sky-100 px-4 py-1 rounded-full mt-2 border border-sky-200">澱粉</span>
+                </div>
+
+                <!-- Central Big Cookie -->
+                <svg id="big-cookie" class="cookie-piece" width="180" height="180" viewBox="0 0 100 100">
+                    <path d="M20,50 C20,20 80,20 80,50 C80,80 20,80 20,50 Z" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>
+                    <!-- Choc Chips -->
+                    <circle cx="35" cy="40" r="4.5" fill="#78350f"/><circle cx="65" cy="45" r="5.5" fill="#78350f"/>
+                    <circle cx="50" cy="65" r="5" fill="#78350f"/><circle cx="45" cy="30" r="3.5" fill="#78350f"/>
+                    <circle cx="70" cy="60" r="4" fill="#78350f"/><circle cx="30" cy="60" r="4.5" fill="#78350f"/>
+                </svg>
+
+                <!-- Small Cookie Pieces -->
+                <!-- Top Left -->
+                <svg id="sc-1" class="cookie-piece small-piece" width="90" height="90" viewBox="0 0 100 100" style="opacity: 0; pointer-events: none; transform: scale(0);">
+                    <path d="M30,70 C30,40 70,30 70,60 C70,80 40,90 30,70 Z" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>
+                    <circle cx="50" cy="55" r="5.5" fill="#78350f"/><circle cx="60" cy="70" r="3.5" fill="#78350f"/>
+                </svg>
+                <!-- Top Right -->
+                <svg id="sc-2" class="cookie-piece small-piece" width="85" height="85" viewBox="0 0 100 100" style="opacity: 0; pointer-events: none; transform: scale(0);">
+                    <path d="M40,30 C60,20 80,40 70,60 C50,70 30,50 40,30 Z" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>
+                    <circle cx="55" cy="45" r="4.5" fill="#78350f"/>
+                </svg>
+                <!-- Bottom Left -->
+                <svg id="sc-3" class="cookie-piece small-piece" width="100" height="100" viewBox="0 0 100 100" style="opacity: 0; pointer-events: none; transform: scale(0);">
+                    <path d="M20,60 C30,30 70,40 60,70 C40,90 10,80 20,60 Z" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>
+                    <circle cx="40" cy="60" r="6.5" fill="#78350f"/><circle cx="30" cy="45" r="3.5" fill="#78350f"/>
+                </svg>
+                <!-- Bottom Right -->
+                <svg id="sc-4" class="cookie-piece small-piece" width="95" height="95" viewBox="0 0 100 100" style="opacity: 0; pointer-events: none; transform: scale(0);">
+                    <path d="M30,40 C50,20 80,30 70,60 C60,80 20,70 30,40 Z" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>
+                    <circle cx="50" cy="45" r="4.5" fill="#78350f"/><circle cx="60" cy="60" r="4" fill="#78350f"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-[2rem] shadow-xl border-t-8 border-sky-400 flex flex-col relative overflow-hidden bg-grid-sky">
+            <h2 class="text-2xl font-bold text-sky-900 text-center py-4 bg-white/90 backdrop-blur-md border-b border-sky-100 shadow-sm z-20">
+                化學消化
+            </h2>
+            <div class="absolute top-20 w-full text-center z-20 pointer-events-none">
+                <span id="chem-instruction" class="inline-block bg-sky-100 text-sky-800 px-6 py-2 rounded-full text-[15px] font-bold shadow-md transition-all duration-300">
+                    請拖曳綠色「酶」至澱粉鏈的連接處剪斷
+                </span>
+            </div>
+
+            <div class="panel-container w-full h-full">
+                <!-- SVG Canvas is explicitly sized to prevent coordinate drifting -->
+                <svg id="chem-svg" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid meet">
+                    <defs>
+                        <!-- Glucose Hexagon (Pointy left/right for horizontal bonding) -->
+                        <g id="glucose-hex">
+                            <polygon points="-16,0 -8,-14 8,-14 16,0 8,14 -8,14" fill="#7dd3fc" stroke="#0284c7" stroke-width="2" stroke-linejoin="round"/>
+                        </g>
+                        
+                        <!-- Lock and Key Enzyme Shape -->
+                        <!-- A large circle with a specific notch at the top that perfectly fits the bond and hexagon edges -->
+                        <g id="enzyme-shape">
+                            <path d="M -40,30 
+                                     A 45,45 0 1,0 40,30 
+                                     L 15,30 
+                                     L 8,15 
+                                     L -8,15 
+                                     L -15,30 Z" 
+                                  fill="#84cc16" stroke="#4d7c0f" stroke-width="3" stroke-linejoin="round"/>
+                            <text y="50" text-anchor="middle" fill="white" font-size="20" font-weight="bold">酶</text>
+                        </g>
+                    </defs>
+
+                    <!-- Layers to keep rendering order correct -->
+                    <g id="chem-bonds-layer"></g>
+                    <g id="chem-nodes-layer"></g>
+                    <g id="chem-labels-layer"></g>
+                    
+                    <!-- Draggable Enzyme Element -->
+                    <g id="enzyme-group">
+                        <use href="#enzyme-shape"/>
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- Mechanical Logic ---
+        const mechContainer = document.getElementById('mech-container');
+        const bigCookie = document.getElementById('big-cookie');
+        const sc1 = document.getElementById('sc-1');
+        const sc2 = document.getElementById('sc-2');
+        const sc3 = document.getElementById('sc-3');
+        const sc4 = document.getElementById('sc-4');
+        const smallCookies = [sc1, sc2, sc3, sc4];
+        const mechTooltip = document.getElementById('mech-tooltip');
+        const mechInstruction = document.getElementById('mech-instruction');
+
+        // Fixed positions to scatter the cookies so they are stable
+        const scatterOffsets = [
+            { x: -70, y: -70, rot: -15 },
+            { x: 80, y: -50, rot: 25 },
+            { x: -60, y: 80, rot: -30 },
+            { x: 70, y: 70, rot: 15 }
+        ];
+
+        let mechIsBroken = false;
+
+        function initMechanical() {
+            mechIsBroken = false;
+            
+            // Reset big cookie
+            bigCookie.style.opacity = '1';
+            bigCookie.style.pointerEvents = 'auto';
+            bigCookie.style.transform = 'translate(-50%, -50%) scale(1)';
+            // Center the big cookie precisely using absolute positioning
+            bigCookie.style.position = 'absolute';
+            bigCookie.style.left = '50%';
+            bigCookie.style.top = '50%';
+
+            // Hide and reset small cookies
+            smallCookies.forEach((cookie) => {
+                cookie.style.opacity = '0';
+                cookie.style.pointerEvents = 'none';
+                cookie.style.position = 'absolute';
+                cookie.style.left = '50%';
+                cookie.style.top = '50%';
+                cookie.style.transform = `translate(-50%, -50%) scale(0) rotate(0deg)`;
+            });
+
+            mechTooltip.classList.remove('visible');
+            
+            mechInstruction.textContent = '請點擊下方的大餅乾 (模擬牙齒咀嚼)';
+            mechInstruction.className = 'inline-block bg-amber-100 text-amber-800 px-6 py-2 rounded-full text-[15px] font-bold shadow-md transition-all duration-300';
+        }
+
+        // Break the cookie
+        bigCookie.addEventListener('click', () => {
+            if (mechIsBroken) return;
+            mechIsBroken = true;
+
+            bigCookie.style.opacity = '0';
+            bigCookie.style.pointerEvents = 'none';
+            bigCookie.style.transform = 'translate(-50%, -50%) scale(0.5)';
+
+            // Scatter pieces
+            smallCookies.forEach((cookie, index) => {
+                const pos = scatterOffsets[index];
+                cookie.style.opacity = '1';
+                cookie.style.pointerEvents = 'auto';
+                // Transform combines center offset (-50%, -50%) with scatter offset
+                cookie.style.transform = `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px)) scale(1) rotate(${pos.rot}deg)`;
+            });
+
+            mechInstruction.textContent = '變成小碎塊。點擊碎塊查看其內部結構。';
+            mechInstruction.className = 'inline-block bg-white border-2 border-amber-400 text-amber-700 px-6 py-2 rounded-full text-[15px] font-bold shadow-md transition-all duration-300';
+        });
+
+        // Click a small cookie to show tooltip
+        smallCookies.forEach((cookie) => {
+            cookie.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                const containerRect = mechContainer.getBoundingClientRect();
+                const cookieRect = cookie.getBoundingClientRect();
+                
+                // Calculate center top of the exact clicked element
+                const targetX = (cookieRect.left - containerRect.left) + (cookieRect.width / 2);
+                const targetY = (cookieRect.top - containerRect.top);
+
+                mechTooltip.style.left = `${targetX}px`;
+                mechTooltip.style.top = `${targetY}px`;
+                mechTooltip.classList.add('visible');
+            });
+        });
+
+        // Click empty area to dismiss tooltip
+        mechContainer.addEventListener('click', () => {
+            if (mechTooltip.classList.contains('visible')) {
+                mechTooltip.classList.remove('visible');
+            }
+        });
+
+        // --- Chemical Logic ---
+        const chemSvg = document.getElementById('chem-svg');
+        const nodesLayer = document.getElementById('chem-nodes-layer');
+        const bondsLayer = document.getElementById('chem-bonds-layer');
+        const labelsLayer = document.getElementById('chem-labels-layer');
+        const enzymeGroup = document.getElementById('enzyme-group');
+        const chemInstruction = document.getElementById('chem-instruction');
+
+        // Layout Constants - Fixed values prevent drifting
+        const NUM_NODES = 8;
+        const CHAIN_Y = 200; // Y position of the chain
+        const NODE_WIDTH = 32; // Total width of a hexagon (from points -16 to 16)
+        const BOND_LENGTH = 12; // Gap between hexagons
+        const SPACING = NODE_WIDTH + BOND_LENGTH; // 44px
+        
+        // Calculate total initial width to center it in the 800px SVG viewport
+        const TOTAL_INITIAL_WIDTH = (NUM_NODES - 1) * SPACING;
+        const START_X = (800 - TOTAL_INITIAL_WIDTH) / 2; 
+        
+        const BREAK_GAP_EXTRA = 30; // How much extra space is added when a bond breaks
+
+        const ENZYME_HOME_X = 400;
+        const ENZYME_HOME_Y = 350;
+        const SNAP_RADIUS = 40; // Detection radius for cutting
+
+        let bondsActive = []; 
+        let bondHitboxes = []; // Store absolute coords of active bonds
+        let enzymeState = { x: ENZYME_HOME_X, y: ENZYME_HOME_Y, isDragging: false };
+
+        function initChemical() {
+            bondsActive = Array(NUM_NODES - 1).fill(true);
+            enzymeState.x = ENZYME_HOME_X;
+            enzymeState.y = ENZYME_HOME_Y;
+            updateEnzymeTransform();
+            
+            chemInstruction.textContent = "請拖曳綠色「酶」至澱粉鏈的連接處剪斷";
+            chemInstruction.className = 'inline-block bg-sky-100 text-sky-800 px-6 py-2 rounded-full text-[15px] font-bold shadow-md transition-all duration-300';
+            
+            renderChemicalChain();
+        }
+
+        function renderChemicalChain() {
+            nodesLayer.innerHTML = '';
+            bondsLayer.innerHTML = '';
+            labelsLayer.innerHTML = '';
+            bondHitboxes = [];
+
+            let currentX = START_X;
+            
+            // To ensure the whole chain doesn't drift right when broken,
+            // we shift the START_X slightly left based on how many broken bonds exist.
+            let brokenCount = bondsActive.filter(b => !b).length;
+            currentX -= (brokenCount * BREAK_GAP_EXTRA) / 2;
+
+            let segments = [];
+            let currentSeg = [];
+
+            for (let i = 0; i < NUM_NODES; i++) {
+                // 1. Draw the Node
+                const hex = document.createElementNS("http://www.w3.org/2000/svg", "use");
+                hex.setAttribute("href", "#glucose-hex");
+                hex.setAttribute("x", currentX);
+                hex.setAttribute("y", CHAIN_Y);
+                hex.setAttribute("class", "chem-node");
+                nodesLayer.appendChild(hex);
+                
+                // Track nodes for the current segment to draw labels later
+                currentSeg.push({ index: i, x: currentX });
+
+                // 2. Draw the Bond or add a Gap
+                if (i < NUM_NODES - 1) {
+                    if (bondsActive[i]) {
+                        // Bond is active
+                        const bondLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                        bondLine.setAttribute("x1", currentX + 16); // Right point of hex
+                        bondLine.setAttribute("y1", CHAIN_Y);
+                        bondLine.setAttribute("x2", currentX + 16 + BOND_LENGTH); // Left point of next hex
+                        bondLine.setAttribute("y2", CHAIN_Y);
+                        bondLine.setAttribute("stroke", "#334155");
+                        bondLine.setAttribute("stroke-width", "5");
+                        bondLine.setAttribute("class", "chem-bond");
+                        bondsLayer.appendChild(bondLine);
+
+                        // Save hitbox for enzyme
+                        bondHitboxes.push({
+                            index: i,
+                            x: currentX + 16 + (BOND_LENGTH / 2),
+                            y: CHAIN_Y
+                        });
+
+                        currentX += SPACING; // Normal spacing
+                    } else {
+                        // Bond is broken
+                        segments.push([...currentSeg]); // Save completed segment
+                        currentSeg = []; // Reset for next segment
+                        
+                        currentX += SPACING + BREAK_GAP_EXTRA; // Normal spacing + visual gap
+                    }
+                } else {
+                    // Last node ends the final segment
+                    segments.push([...currentSeg]);
+                }
+            }
+
+            // 3. Draw Labels for Fragments (Strictly Length 1 = 葡萄糖, Length 2 = 麥芽糖)
+            segments.forEach(seg => {
+                const len = seg.length;
+                if (len === 1 || len === 2) {
+                    // Calculate absolute center of this segment
+                    const startX = seg[0].x;
+                    const endX = seg[len - 1].x;
+                    const centerX = (startX + endX) / 2;
+
+                    const labelGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                    labelGroup.setAttribute("transform", `translate(${centerX}, ${CHAIN_Y + 55})`);
+
+                    const bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    bgRect.setAttribute("x", "-35");
+                    bgRect.setAttribute("y", "-18");
+                    bgRect.setAttribute("width", "70");
+                    bgRect.setAttribute("height", "26");
+                    bgRect.setAttribute("rx", "13"); // Rounded pill
+                    
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("text-anchor", "middle");
+                    text.setAttribute("font-size", "14");
+                    text.setAttribute("font-weight", "bold");
+                    
+                    if (len === 1) {
+                        bgRect.setAttribute("fill", "#ffedd5"); // Orange-50
+                        bgRect.setAttribute("stroke", "#fdba74"); // Orange-300
+                        bgRect.setAttribute("stroke-width", "1.5");
+                        text.setAttribute("fill", "#c2410c"); // Orange-700
+                        text.textContent = "葡萄糖";
+                    } else if (len === 2) {
+                        bgRect.setAttribute("fill", "#dcfce7"); // Green-50
+                        bgRect.setAttribute("stroke", "#86efac"); // Green-300
+                        bgRect.setAttribute("stroke-width", "1.5");
+                        text.setAttribute("fill", "#15803d"); // Green-700
+                        text.textContent = "麥芽糖";
+                    }
+                    
+                    labelGroup.appendChild(bgRect);
+                    labelGroup.appendChild(text);
+                    labelsLayer.appendChild(labelGroup);
+                }
+            });
+
+            // Win condition check
+            if (bondsActive.every(b => b === false)) {
+                chemInstruction.textContent = "消化完成！澱粉已全部被分解為葡萄糖。";
+                chemInstruction.className = 'inline-block bg-green-100 text-green-800 px-6 py-2 rounded-full text-[15px] font-bold shadow-md transition-all duration-300';
+            }
+        }
+
+        let dragOffset = { x: 0, y: 0 };
+
+        // Convert DOM coordinates to SVG ViewBox coordinates
+        function getSvgPoint(evt) {
+            const pt = chemSvg.createSVGPoint();
+            pt.x = evt.clientX || (evt.touches && evt.touches[0].clientX);
+            pt.y = evt.clientY || (evt.touches && evt.touches[0].clientY);
+            return pt.matrixTransform(chemSvg.getScreenCTM().inverse());
+        }
+
+        function startDrag(evt) {
+            evt.preventDefault(); // Stop scrolling on touch
+            enzymeState.isDragging = true;
+            enzymeGroup.classList.add('dragging');
+            
+            // Remove transition so it follows mouse instantly
+            enzymeGroup.style.transition = 'none';
+
+            const svgPos = getSvgPoint(evt);
+            dragOffset.x = svgPos.x - enzymeState.x;
+            dragOffset.y = svgPos.y - enzymeState.y;
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', drag, { passive: false });
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
+        }
+
+        function drag(evt) {
+            if (!enzymeState.isDragging) return;
+            evt.preventDefault();
+            
+            const svgPos = getSvgPoint(evt);
+            enzymeState.x = svgPos.x - dragOffset.x;
+            enzymeState.y = svgPos.y - dragOffset.y;
+            
+            updateEnzymeTransform();
+        }
+
+        function endDrag(evt) {
+            if (!enzymeState.isDragging) return;
+            enzymeState.isDragging = false;
+            enzymeGroup.classList.remove('dragging');
+
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('touchmove', drag);
+            document.removeEventListener('mouseup', endDrag);
+            document.removeEventListener('touchend', endDrag);
+
+            // Hit Detection Logic
+            // The functional "notch" of our new enzyme is at its top edge (y=15 in local coords).
+            // Enzyme center is enzymeState.x, enzymeState.y.
+            let notchX = enzymeState.x;
+            let notchY = enzymeState.y + 15; // +15 offset matches where the notch visual is drawn
+            
+            let snapped = false;
+            let targetBondIndex = -1;
+
+            for (let i = 0; i < bondHitboxes.length; i++) {
+                const bond = bondHitboxes[i];
+                const dist = Math.hypot(notchX - bond.x, notchY - bond.y);
+                
+                if (dist < SNAP_RADIUS) {
+                    snapped = true;
+                    targetBondIndex = bond.index;
+                    
+                    // Visually snap to bond
+                    enzymeState.x = bond.x;
+                    enzymeState.y = bond.y - 15; 
+                    break;
+                }
+            }
+
+            if (snapped) {
+                updateEnzymeTransform(); 
+                
+                // Break bond and re-render after short visual pause
+                setTimeout(() => {
+                    bondsActive[targetBondIndex] = false;
+                    renderChemicalChain();
+                    returnEnzymeHome();
+                }, 250);
+                
+            } else {
+                returnEnzymeHome();
+            }
+        }
+
+        function updateEnzymeTransform() {
+            enzymeGroup.setAttribute("transform", `translate(${enzymeState.x}, ${enzymeState.y})`);
+        }
+
+        function returnEnzymeHome() {
+            // Apply CSS transition for smooth return animation
+            enzymeGroup.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            enzymeState.x = ENZYME_HOME_X;
+            enzymeState.y = ENZYME_HOME_Y;
+            updateEnzymeTransform();
+            
+            // Cleanup transition property after animation completes
+            setTimeout(() => {
+                enzymeGroup.style.transition = 'none';
+            }, 400);
+        }
+
+        // Event Bindings
+        enzymeGroup.addEventListener('mousedown', startDrag);
+        enzymeGroup.addEventListener('touchstart', startDrag, { passive: false });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            initMechanical();
+            initChemical();
+        });
+
+        // Initialize on load
+        window.onload = () => {
+            initMechanical();
+            initChemical();
+        };
+
+    </script>
+</body>
+</html>
