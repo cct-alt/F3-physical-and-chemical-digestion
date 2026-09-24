@@ -17,7 +17,7 @@
         .panel-container {
             position: relative;
             width: 100%;
-            height: 450px;
+            height: 500px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -108,8 +108,8 @@
 <body class="min-h-screen flex flex-col p-2 md:p-6 text-slate-800">
 
     <header class="mb-6 text-center relative shrink-0">
-        <h1 class="text-3xl font-extrabold text-slate-800 mb-2">消化作用的對比</h1>
-        <p class="text-slate-600 font-medium">觀察大塊食物與分子結構在兩種消化過程中的變化</p>
+        <h1 class="text-4xl font-extrabold text-slate-800 mb-3">消化作用的對比</h1>
+        <p class="text-lg text-slate-600 font-medium">觀察大塊食物與分子結構在兩種消化過程中的變化</p>
         <button id="btn-reset" class="mt-4 md:mt-0 md:absolute md:right-4 md:top-2 text-slate-700 font-bold py-2 px-6 rounded-full bg-white border-2 border-slate-300 hover:bg-slate-100 hover:border-slate-400 active:bg-slate-200 transition-all shadow-sm z-50">
             重新開始
         </button>
@@ -118,11 +118,11 @@
     <main class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto w-full">
         
         <div class="bg-white rounded-[2rem] shadow-xl border-t-8 border-amber-400 flex flex-col relative overflow-hidden bg-grid-amber">
-            <h2 class="text-2xl font-bold text-amber-900 text-center py-4 bg-white/90 backdrop-blur-md border-b border-amber-100 shadow-sm z-20">
+            <h2 class="text-3xl font-bold text-amber-900 text-center py-4 bg-white/90 backdrop-blur-md border-b border-amber-100 shadow-sm z-20">
                 物理消化 (機械消化)
             </h2>
             <div class="absolute top-20 w-full text-center z-20 pointer-events-none">
-                <span id="mech-instruction" class="inline-block bg-amber-100 text-amber-800 px-6 py-2 rounded-full text-[15px] font-bold shadow-md transition-all duration-300">
+                <span id="mech-instruction" class="inline-block bg-amber-100 text-amber-800 px-6 py-2 rounded-full text-lg font-bold shadow-md transition-all duration-300">
                     請點擊下方的大餅乾 (模擬牙齒咀嚼)
                 </span>
             </div>
@@ -130,9 +130,9 @@
             <div id="mech-container" class="panel-container">
                 <!-- Tooltip showing molecular structure remains unchanged -->
                 <div id="mech-tooltip">
-                    <span class="text-sm font-bold text-slate-600 mb-2">內部化學結構未改變</span>
+                    <span class="text-base font-bold text-slate-600 mb-2">內部化學結構未改變</span>
                     <!-- Mini Starch SVG inside tooltip -->
-                    <svg width="150" height="24" viewBox="0 0 150 24">
+                    <svg width="200" height="32" viewBox="0 0 150 24">
                         <g transform="translate(15, 12) scale(0.6)">
                             <line x1="0" y1="0" x2="40" y2="0" stroke="#334155" stroke-width="5"/>
                             <line x1="40" y1="0" x2="80" y2="0" stroke="#334155" stroke-width="5"/>
@@ -145,11 +145,11 @@
                             <polygon points="145,0 152.5,-13 167.5,-13 175,0 167.5,13 152.5,13" fill="#38bdf8" stroke="#0284c7" stroke-width="2"/>
                         </g>
                     </svg>
-                    <span class="text-sm font-bold text-sky-800 bg-sky-100 px-4 py-1 rounded-full mt-2 border border-sky-200">澱粉</span>
+                    <span class="text-base font-bold text-sky-800 bg-sky-100 px-4 py-1 rounded-full mt-2 border border-sky-200">澱粉</span>
                 </div>
 
                 <!-- Central Big Cookie -->
-                <svg id="big-cookie" class="cookie-piece" width="180" height="180" viewBox="0 0 100 100">
+                <svg id="big-cookie" class="cookie-piece" width="240" height="240" viewBox="0 0 100 100">
                     <path d="M20,50 C20,20 80,20 80,50 C80,80 20,80 20,50 Z" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>
                     <!-- Choc Chips -->
                     <circle cx="35" cy="40" r="4.5" fill="#78350f"/><circle cx="65" cy="45" r="5.5" fill="#78350f"/>
@@ -159,22 +159,22 @@
 
                 <!-- Small Cookie Pieces -->
                 <!-- Top Left -->
-                <svg id="sc-1" class="cookie-piece small-piece" width="90" height="90" viewBox="0 0 100 100" style="opacity: 0; pointer-events: none; transform: scale(0);">
+                <svg id="sc-1" class="cookie-piece small-piece" width="130" height="130" viewBox="0 0 100 100" style="opacity: 0; pointer-events: none; transform: scale(0);">
                     <path d="M30,70 C30,40 70,30 70,60 C70,80 40,90 30,70 Z" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>
                     <circle cx="50" cy="55" r="5.5" fill="#78350f"/><circle cx="60" cy="70" r="3.5" fill="#78350f"/>
                 </svg>
                 <!-- Top Right -->
-                <svg id="sc-2" class="cookie-piece small-piece" width="85" height="85" viewBox="0 0 100 100" style="opacity: 0; pointer-events: none; transform: scale(0);">
+                <svg id="sc-2" class="cookie-piece small-piece" width="125" height="125" viewBox="0 0 100 100" style="opacity: 0; pointer-events: none; transform: scale(0);">
                     <path d="M40,30 C60,20 80,40 70,60 C50,70 30,50 40,30 Z" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>
                     <circle cx="55" cy="45" r="4.5" fill="#78350f"/>
                 </svg>
                 <!-- Bottom Left -->
-                <svg id="sc-3" class="cookie-piece small-piece" width="100" height="100" viewBox="0 0 100 100" style="opacity: 0; pointer-events: none; transform: scale(0);">
+                <svg id="sc-3" class="cookie-piece small-piece" width="140" height="140" viewBox="0 0 100 100" style="opacity: 0; pointer-events: none; transform: scale(0);">
                     <path d="M20,60 C30,30 70,40 60,70 C40,90 10,80 20,60 Z" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>
                     <circle cx="40" cy="60" r="6.5" fill="#78350f"/><circle cx="30" cy="45" r="3.5" fill="#78350f"/>
                 </svg>
                 <!-- Bottom Right -->
-                <svg id="sc-4" class="cookie-piece small-piece" width="95" height="95" viewBox="0 0 100 100" style="opacity: 0; pointer-events: none; transform: scale(0);">
+                <svg id="sc-4" class="cookie-piece small-piece" width="135" height="135" viewBox="0 0 100 100" style="opacity: 0; pointer-events: none; transform: scale(0);">
                     <path d="M30,40 C50,20 80,30 70,60 C60,80 20,70 30,40 Z" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>
                     <circle cx="50" cy="45" r="4.5" fill="#78350f"/><circle cx="60" cy="60" r="4" fill="#78350f"/>
                 </svg>
@@ -182,18 +182,18 @@
         </div>
 
         <div class="bg-white rounded-[2rem] shadow-xl border-t-8 border-sky-400 flex flex-col relative overflow-hidden bg-grid-sky">
-            <h2 class="text-2xl font-bold text-sky-900 text-center py-4 bg-white/90 backdrop-blur-md border-b border-sky-100 shadow-sm z-20">
+            <h2 class="text-3xl font-bold text-sky-900 text-center py-4 bg-white/90 backdrop-blur-md border-b border-sky-100 shadow-sm z-20">
                 化學消化
             </h2>
             <div class="absolute top-20 w-full text-center z-20 pointer-events-none">
-                <span id="chem-instruction" class="inline-block bg-sky-100 text-sky-800 px-6 py-2 rounded-full text-[15px] font-bold shadow-md transition-all duration-300">
+                <span id="chem-instruction" class="inline-block bg-sky-100 text-sky-800 px-6 py-2 rounded-full text-lg font-bold shadow-md transition-all duration-300">
                     請拖曳綠色「酶」至澱粉鏈的連接處剪斷
                 </span>
             </div>
 
             <div class="panel-container w-full h-full">
-                <!-- SVG Canvas adjusted to 600x350 to prevent clipping at the bottom -->
-                <svg id="chem-svg" viewBox="0 0 600 350" preserveAspectRatio="xMidYMid meet">
+                <!-- SVG Canvas adjusted to 560x340 to prevent clipping at the bottom and match proportions -->
+                <svg id="chem-svg" viewBox="0 0 560 340" preserveAspectRatio="xMidYMid meet">
                     <defs>
                         <!-- Glucose Hexagon -->
                         <g id="glucose-hex">
@@ -240,10 +240,10 @@
         const mechInstruction = document.getElementById('mech-instruction');
 
         const scatterOffsets = [
-            { x: -70, y: -70, rot: -15 },
-            { x: 80, y: -50, rot: 25 },
-            { x: -60, y: 80, rot: -30 },
-            { x: 70, y: 70, rot: 15 }
+            { x: -110, y: -100, rot: -15 },
+            { x: 120, y: -80, rot: 25 },
+            { x: -100, y: 120, rot: -30 },
+            { x: 110, y: 110, rot: 15 }
         ];
 
         let mechIsBroken = false;
@@ -270,7 +270,7 @@
             mechTooltip.classList.remove('visible');
             
             mechInstruction.textContent = '請點擊下方的大餅乾 (模擬牙齒咀嚼)';
-            mechInstruction.className = 'inline-block bg-amber-100 text-amber-800 px-6 py-2 rounded-full text-[15px] font-bold shadow-md transition-all duration-300';
+            mechInstruction.className = 'inline-block bg-amber-100 text-amber-800 px-6 py-2 rounded-full text-lg font-bold shadow-md transition-all duration-300';
         }
 
         bigCookie.addEventListener('click', () => {
@@ -289,7 +289,7 @@
             });
 
             mechInstruction.textContent = '變成小碎塊。點擊碎塊查看其內部結構。';
-            mechInstruction.className = 'inline-block bg-white border-2 border-amber-400 text-amber-700 px-6 py-2 rounded-full text-[15px] font-bold shadow-md transition-all duration-300';
+            mechInstruction.className = 'inline-block bg-white border-2 border-amber-400 text-amber-700 px-6 py-2 rounded-full text-lg font-bold shadow-md transition-all duration-300';
         });
 
         smallCookies.forEach((cookie) => {
@@ -322,7 +322,7 @@
         const enzymeGroup = document.getElementById('enzyme-group');
         const chemInstruction = document.getElementById('chem-instruction');
 
-        // Layout Constants - Adjusted for 600x350 viewbox to prevent clipping
+        // Layout Constants - Adjusted for 560x340 viewbox
         const NUM_NODES = 8;
         const CHAIN_Y = 130; // Adjusted for optimal vertical spacing
         const NODE_WIDTH = 32; 
@@ -330,12 +330,12 @@
         const SPACING = NODE_WIDTH + BOND_LENGTH; // 44
         
         const TOTAL_INITIAL_WIDTH = (NUM_NODES - 1) * SPACING;
-        const START_X = (600 - TOTAL_INITIAL_WIDTH) / 2; // Centers inside 600px width
+        const START_X = (560 - TOTAL_INITIAL_WIDTH) / 2; // Centers inside 560px width
         
         const BREAK_GAP_EXTRA = 30; 
 
-        const ENZYME_HOME_X = 300; // Centers in 600px width
-        const ENZYME_HOME_Y = 270; // Positioned safely above bottom edge
+        const ENZYME_HOME_X = 280; // Centers in 560px width
+        const ENZYME_HOME_Y = 260; // Positioned safely above bottom edge
         const SNAP_RADIUS = 40; 
 
         let bondsActive = []; 
@@ -349,7 +349,7 @@
             updateEnzymeTransform();
             
             chemInstruction.textContent = "請拖曳綠色「酶」至澱粉鏈的連接處剪斷";
-            chemInstruction.className = 'inline-block bg-sky-100 text-sky-800 px-6 py-2 rounded-full text-[15px] font-bold shadow-md transition-all duration-300';
+            chemInstruction.className = 'inline-block bg-sky-100 text-sky-800 px-6 py-2 rounded-full text-lg font-bold shadow-md transition-all duration-300';
             
             renderChemicalChain();
         }
@@ -419,15 +419,15 @@
                     labelGroup.setAttribute("transform", `translate(${centerX}, ${CHAIN_Y + 55})`);
 
                     const bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                    bgRect.setAttribute("x", "-35");
-                    bgRect.setAttribute("y", "-18");
-                    bgRect.setAttribute("width", "70");
-                    bgRect.setAttribute("height", "26");
-                    bgRect.setAttribute("rx", "13"); 
+                    bgRect.setAttribute("x", "-40");
+                    bgRect.setAttribute("y", "-20");
+                    bgRect.setAttribute("width", "80");
+                    bgRect.setAttribute("height", "28");
+                    bgRect.setAttribute("rx", "14"); 
                     
                     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
                     text.setAttribute("text-anchor", "middle");
-                    text.setAttribute("font-size", "14");
+                    text.setAttribute("font-size", "16");
                     text.setAttribute("font-weight", "bold");
                     
                     if (len === 1) {
@@ -452,7 +452,7 @@
 
             if (bondsActive.every(b => b === false)) {
                 chemInstruction.textContent = "消化完成！澱粉已全部被分解為葡萄糖。";
-                chemInstruction.className = 'inline-block bg-green-100 text-green-800 px-6 py-2 rounded-full text-[15px] font-bold shadow-md transition-all duration-300';
+                chemInstruction.className = 'inline-block bg-green-100 text-green-800 px-6 py-2 rounded-full text-lg font-bold shadow-md transition-all duration-300';
             }
         }
 
