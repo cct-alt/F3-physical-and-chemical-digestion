@@ -192,16 +192,15 @@
             </div>
 
             <div class="panel-container w-full h-full">
-                <!-- SVG Canvas is explicitly sized to prevent coordinate drifting -->
-                <svg id="chem-svg" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid meet">
+                <!-- SVG Canvas adjusted to 600x350 to prevent clipping at the bottom -->
+                <svg id="chem-svg" viewBox="0 0 600 350" preserveAspectRatio="xMidYMid meet">
                     <defs>
-                        <!-- Glucose Hexagon (Pointy left/right for horizontal bonding) -->
+                        <!-- Glucose Hexagon -->
                         <g id="glucose-hex">
                             <polygon points="-16,0 -8,-14 8,-14 16,0 8,14 -8,14" fill="#7dd3fc" stroke="#0284c7" stroke-width="2" stroke-linejoin="round"/>
                         </g>
                         
                         <!-- Lock and Key Enzyme Shape -->
-                        <!-- A large circle with a specific notch at the top that perfectly fits the bond and hexagon edges -->
                         <g id="enzyme-shape">
                             <path d="M -40,30 
                                      A 45,45 0 1,0 40,30 
@@ -240,7 +239,6 @@
         const mechTooltip = document.getElementById('mech-tooltip');
         const mechInstruction = document.getElementById('mech-instruction');
 
-        // Fixed positions to scatter the cookies so they are stable
         const scatterOffsets = [
             { x: -70, y: -70, rot: -15 },
             { x: 80, y: -50, rot: 25 },
@@ -253,16 +251,13 @@
         function initMechanical() {
             mechIsBroken = false;
             
-            // Reset big cookie
             bigCookie.style.opacity = '1';
             bigCookie.style.pointerEvents = 'auto';
             bigCookie.style.transform = 'translate(-50%, -50%) scale(1)';
-            // Center the big cookie precisely using absolute positioning
             bigCookie.style.position = 'absolute';
             bigCookie.style.left = '50%';
             bigCookie.style.top = '50%';
 
-            // Hide and reset small cookies
             smallCookies.forEach((cookie) => {
                 cookie.style.opacity = '0';
                 cookie.style.pointerEvents = 'none';
@@ -278,7 +273,6 @@
             mechInstruction.className = 'inline-block bg-amber-100 text-amber-800 px-6 py-2 rounded-full text-[15px] font-bold shadow-md transition-all duration-300';
         }
 
-        // Break the cookie
         bigCookie.addEventListener('click', () => {
             if (mechIsBroken) return;
             mechIsBroken = true;
@@ -287,12 +281,10 @@
             bigCookie.style.pointerEvents = 'none';
             bigCookie.style.transform = 'translate(-50%, -50%) scale(0.5)';
 
-            // Scatter pieces
             smallCookies.forEach((cookie, index) => {
                 const pos = scatterOffsets[index];
                 cookie.style.opacity = '1';
                 cookie.style.pointerEvents = 'auto';
-                // Transform combines center offset (-50%, -50%) with scatter offset
                 cookie.style.transform = `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px)) scale(1) rotate(${pos.rot}deg)`;
             });
 
@@ -300,7 +292,6 @@
             mechInstruction.className = 'inline-block bg-white border-2 border-amber-400 text-amber-700 px-6 py-2 rounded-full text-[15px] font-bold shadow-md transition-all duration-300';
         });
 
-        // Click a small cookie to show tooltip
         smallCookies.forEach((cookie) => {
             cookie.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -308,7 +299,6 @@
                 const containerRect = mechContainer.getBoundingClientRect();
                 const cookieRect = cookie.getBoundingClientRect();
                 
-                // Calculate center top of the exact clicked element
                 const targetX = (cookieRect.left - containerRect.left) + (cookieRect.width / 2);
                 const targetY = (cookieRect.top - containerRect.top);
 
@@ -318,7 +308,6 @@
             });
         });
 
-        // Click empty area to dismiss tooltip
         mechContainer.addEventListener('click', () => {
             if (mechTooltip.classList.contains('visible')) {
                 mechTooltip.classList.remove('visible');
@@ -333,25 +322,24 @@
         const enzymeGroup = document.getElementById('enzyme-group');
         const chemInstruction = document.getElementById('chem-instruction');
 
-        // Layout Constants - Fixed values prevent drifting
+        // Layout Constants - Adjusted for 600x350 viewbox to prevent clipping
         const NUM_NODES = 8;
-        const CHAIN_Y = 200; // Y position of the chain
-        const NODE_WIDTH = 32; // Total width of a hexagon (from points -16 to 16)
-        const BOND_LENGTH = 12; // Gap between hexagons
-        const SPACING = NODE_WIDTH + BOND_LENGTH; // 44px
+        const CHAIN_Y = 130; // Adjusted for optimal vertical spacing
+        const NODE_WIDTH = 32; 
+        const BOND_LENGTH = 12; 
+        const SPACING = NODE_WIDTH + BOND_LENGTH; // 44
         
-        // Calculate total initial width to center it in the 800px SVG viewport
         const TOTAL_INITIAL_WIDTH = (NUM_NODES - 1) * SPACING;
-        const START_X = (800 - TOTAL_INITIAL_WIDTH) / 2; 
+        const START_X = (600 - TOTAL_INITIAL_WIDTH) / 2; // Centers inside 600px width
         
-        const BREAK_GAP_EXTRA = 30; // How much extra space is added when a bond breaks
+        const BREAK_GAP_EXTRA = 30; 
 
-        const ENZYME_HOME_X = 400;
-        const ENZYME_HOME_Y = 350;
-        const SNAP_RADIUS = 40; // Detection radius for cutting
+        const ENZYME_HOME_X = 300; // Centers in 600px width
+        const ENZYME_HOME_Y = 270; // Positioned safely above bottom edge
+        const SNAP_RADIUS = 40; 
 
         let bondsActive = []; 
-        let bondHitboxes = []; // Store absolute coords of active bonds
+        let bondHitboxes = []; 
         let enzymeState = { x: ENZYME_HOME_X, y: ENZYME_HOME_Y, isDragging: false };
 
         function initChemical() {
@@ -374,8 +362,6 @@
 
             let currentX = START_X;
             
-            // To ensure the whole chain doesn't drift right when broken,
-            // we shift the START_X slightly left based on how many broken bonds exist.
             let brokenCount = bondsActive.filter(b => !b).length;
             currentX -= (brokenCount * BREAK_GAP_EXTRA) / 2;
 
@@ -383,7 +369,6 @@
             let currentSeg = [];
 
             for (let i = 0; i < NUM_NODES; i++) {
-                // 1. Draw the Node
                 const hex = document.createElementNS("http://www.w3.org/2000/svg", "use");
                 hex.setAttribute("href", "#glucose-hex");
                 hex.setAttribute("x", currentX);
@@ -391,49 +376,41 @@
                 hex.setAttribute("class", "chem-node");
                 nodesLayer.appendChild(hex);
                 
-                // Track nodes for the current segment to draw labels later
                 currentSeg.push({ index: i, x: currentX });
 
-                // 2. Draw the Bond or add a Gap
                 if (i < NUM_NODES - 1) {
                     if (bondsActive[i]) {
-                        // Bond is active
                         const bondLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                        bondLine.setAttribute("x1", currentX + 16); // Right point of hex
+                        bondLine.setAttribute("x1", currentX + 16); 
                         bondLine.setAttribute("y1", CHAIN_Y);
-                        bondLine.setAttribute("x2", currentX + 16 + BOND_LENGTH); // Left point of next hex
+                        bondLine.setAttribute("x2", currentX + 16 + BOND_LENGTH); 
                         bondLine.setAttribute("y2", CHAIN_Y);
                         bondLine.setAttribute("stroke", "#334155");
                         bondLine.setAttribute("stroke-width", "5");
                         bondLine.setAttribute("class", "chem-bond");
                         bondsLayer.appendChild(bondLine);
 
-                        // Save hitbox for enzyme
                         bondHitboxes.push({
                             index: i,
                             x: currentX + 16 + (BOND_LENGTH / 2),
                             y: CHAIN_Y
                         });
 
-                        currentX += SPACING; // Normal spacing
+                        currentX += SPACING; 
                     } else {
-                        // Bond is broken
-                        segments.push([...currentSeg]); // Save completed segment
-                        currentSeg = []; // Reset for next segment
+                        segments.push([...currentSeg]); 
+                        currentSeg = []; 
                         
-                        currentX += SPACING + BREAK_GAP_EXTRA; // Normal spacing + visual gap
+                        currentX += SPACING + BREAK_GAP_EXTRA; 
                     }
                 } else {
-                    // Last node ends the final segment
                     segments.push([...currentSeg]);
                 }
             }
 
-            // 3. Draw Labels for Fragments (Strictly Length 1 = 葡萄糖, Length 2 = 麥芽糖)
             segments.forEach(seg => {
                 const len = seg.length;
                 if (len === 1 || len === 2) {
-                    // Calculate absolute center of this segment
                     const startX = seg[0].x;
                     const endX = seg[len - 1].x;
                     const centerX = (startX + endX) / 2;
@@ -446,7 +423,7 @@
                     bgRect.setAttribute("y", "-18");
                     bgRect.setAttribute("width", "70");
                     bgRect.setAttribute("height", "26");
-                    bgRect.setAttribute("rx", "13"); // Rounded pill
+                    bgRect.setAttribute("rx", "13"); 
                     
                     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
                     text.setAttribute("text-anchor", "middle");
@@ -454,16 +431,16 @@
                     text.setAttribute("font-weight", "bold");
                     
                     if (len === 1) {
-                        bgRect.setAttribute("fill", "#ffedd5"); // Orange-50
-                        bgRect.setAttribute("stroke", "#fdba74"); // Orange-300
+                        bgRect.setAttribute("fill", "#ffedd5"); 
+                        bgRect.setAttribute("stroke", "#fdba74"); 
                         bgRect.setAttribute("stroke-width", "1.5");
-                        text.setAttribute("fill", "#c2410c"); // Orange-700
+                        text.setAttribute("fill", "#c2410c"); 
                         text.textContent = "葡萄糖";
                     } else if (len === 2) {
-                        bgRect.setAttribute("fill", "#dcfce7"); // Green-50
-                        bgRect.setAttribute("stroke", "#86efac"); // Green-300
+                        bgRect.setAttribute("fill", "#dcfce7"); 
+                        bgRect.setAttribute("stroke", "#86efac"); 
                         bgRect.setAttribute("stroke-width", "1.5");
-                        text.setAttribute("fill", "#15803d"); // Green-700
+                        text.setAttribute("fill", "#15803d"); 
                         text.textContent = "麥芽糖";
                     }
                     
@@ -473,7 +450,6 @@
                 }
             });
 
-            // Win condition check
             if (bondsActive.every(b => b === false)) {
                 chemInstruction.textContent = "消化完成！澱粉已全部被分解為葡萄糖。";
                 chemInstruction.className = 'inline-block bg-green-100 text-green-800 px-6 py-2 rounded-full text-[15px] font-bold shadow-md transition-all duration-300';
@@ -482,7 +458,6 @@
 
         let dragOffset = { x: 0, y: 0 };
 
-        // Convert DOM coordinates to SVG ViewBox coordinates
         function getSvgPoint(evt) {
             const pt = chemSvg.createSVGPoint();
             pt.x = evt.clientX || (evt.touches && evt.touches[0].clientX);
@@ -491,11 +466,10 @@
         }
 
         function startDrag(evt) {
-            evt.preventDefault(); // Stop scrolling on touch
+            evt.preventDefault(); 
             enzymeState.isDragging = true;
             enzymeGroup.classList.add('dragging');
             
-            // Remove transition so it follows mouse instantly
             enzymeGroup.style.transition = 'none';
 
             const svgPos = getSvgPoint(evt);
@@ -529,11 +503,8 @@
             document.removeEventListener('mouseup', endDrag);
             document.removeEventListener('touchend', endDrag);
 
-            // Hit Detection Logic
-            // The functional "notch" of our new enzyme is at its top edge (y=15 in local coords).
-            // Enzyme center is enzymeState.x, enzymeState.y.
             let notchX = enzymeState.x;
-            let notchY = enzymeState.y + 15; // +15 offset matches where the notch visual is drawn
+            let notchY = enzymeState.y + 15; 
             
             let snapped = false;
             let targetBondIndex = -1;
@@ -546,7 +517,6 @@
                     snapped = true;
                     targetBondIndex = bond.index;
                     
-                    // Visually snap to bond
                     enzymeState.x = bond.x;
                     enzymeState.y = bond.y - 15; 
                     break;
@@ -556,7 +526,6 @@
             if (snapped) {
                 updateEnzymeTransform(); 
                 
-                // Break bond and re-render after short visual pause
                 setTimeout(() => {
                     bondsActive[targetBondIndex] = false;
                     renderChemicalChain();
@@ -573,19 +542,16 @@
         }
 
         function returnEnzymeHome() {
-            // Apply CSS transition for smooth return animation
             enzymeGroup.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
             enzymeState.x = ENZYME_HOME_X;
             enzymeState.y = ENZYME_HOME_Y;
             updateEnzymeTransform();
             
-            // Cleanup transition property after animation completes
             setTimeout(() => {
                 enzymeGroup.style.transition = 'none';
             }, 400);
         }
 
-        // Event Bindings
         enzymeGroup.addEventListener('mousedown', startDrag);
         enzymeGroup.addEventListener('touchstart', startDrag, { passive: false });
 
@@ -594,7 +560,6 @@
             initChemical();
         });
 
-        // Initialize on load
         window.onload = () => {
             initMechanical();
             initChemical();
